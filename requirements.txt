@@ -1,0 +1,11 @@
+langchain
+langchain-community
+chromadb
+sentence-transformers
+ctransformers
+unstructured
+unstructured[rst]
+unstructured[md]
+beautifulsoup4
+streamlit
+pypandoc
