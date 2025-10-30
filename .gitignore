@@ -209,3 +209,7 @@ __marimo__/
 # Folders to ignore
 data/*
 models/*
+
+# Do not ignore the following
+!data/.gitkeep
+!models/.gitkeep
