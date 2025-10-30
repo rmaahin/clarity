@@ -208,3 +208,4 @@ __marimo__/
 
 # Folders to ignore
 data/*
+models/*

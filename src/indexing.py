@@ -14,8 +14,6 @@ from langchain_community.document_loaders import DirectoryLoader, UnstructuredFi
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 
-
-
 DEFAULT_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 class Indexing:
