@@ -213,3 +213,8 @@ models/*
 # Do not ignore the following
 !data/.gitkeep
 !models/.gitkeep
+
+# Linux Trash folder 
+.Trash-*/
+.Trashes/
+$RECYCLE.BIN/
