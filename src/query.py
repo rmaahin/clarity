@@ -48,7 +48,7 @@ class RAGBot:
         self.llm = Llama(
             model_path = model_path,
             n_gpu_layers=-1,
-            n_ctx=2048,
+            n_ctx=4096,
             max_tokens=512,
             temperature=0.1,
             verbose=False
@@ -74,6 +74,7 @@ class RAGBot:
         workflow.add_node("grade_documents", self._grade_documents)
         workflow.add_node("web_search", self._web_search_agent)
         workflow.add_node("generate_answer", self._generate_answer)
+        workflow.add_node("answer_editor", self._answer_editor_agent)
 
         router_map = {
                 "bouncer": "bouncer",
@@ -82,6 +83,7 @@ class RAGBot:
                 "grade_documents": "grade_documents",
                 "web_search": "web_search",
                 "generate_answer": "generate_answer",
+                "answer_editor": "answer_editor",
                 "END": END
             }
 
@@ -95,6 +97,7 @@ class RAGBot:
         workflow.add_conditional_edges("grade_documents", self._router_function, router_map)
         workflow.add_conditional_edges("generate_answer", self._router_function, router_map)
         workflow.add_conditional_edges("web_search", self._router_function, router_map)
+        workflow.add_conditional_edges("answer_editor", self._router_function, router_map)
 
         self.app = workflow.compile()
 
@@ -270,17 +273,34 @@ class RAGBot:
         )
 
         response = self.llm(rag_formatted_prompt, max_tokens=512)
-        final_answer = response['choices'][0]['text']
+        answer = response['choices'][0]['text']
 
-        return {'answer': final_answer, 'next_agent': 'END'}
+        return {'answer': answer, 'next_agent': 'answer_editor'}
+    
+    def _answer_editor_agent(self, state: GraphState) -> dict:
+        print('\n---EDITING AND REFINING THE ANSWER FOR YOU---')
 
-    # def _no_relevant_fallback(self, state: GraphState) -> dict:
-    #     '''
-    #     If no relevant documents were found, this node is invoked.    
-    #     '''
+        initial_answer = state['answer']
 
-    #     print('No relevant documents found!')
-    #     return {'answer': "I'm sorry, but there are no relevant documents found to answer your question.", 'next_agent': 'END'}
+        editor_prompt_template = PromptTemplate.from_template(
+            '''
+            You are an expert editor. Your job is to take a draft answer and fix any spelling, grammar, or syntax errors. You must only improve the writing. Do NOT change the core meaning or add any new information.
+
+            Draft answer: {initial_answer} 
+
+            Edited answer:
+            '''
+            
+        )
+
+        editor_formatted_prompt = editor_prompt_template.format(
+            initial_answer = initial_answer
+        )
+
+        edited_answer_response = self.llm(editor_formatted_prompt, max_tokens=512)
+        edited_answer = edited_answer_response['choices'][0]['text']
+
+        return {'answer': edited_answer, 'next_agent': 'END'}
         
     def _router_function(self, state: GraphState) -> str:
         '''
@@ -332,13 +352,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-mp", "--model_path", type=str, help='The path to the LLM', default=DEFAULT_LLM_PATH)
     parser.add_argument("-v", "--vector_state_path", type=str, help='The path to the vector store', default=VECTOR_STATE_PATH)
-    parser.add_argument("-ep", "--embedding_model_path", type=str, help='The file path to the embedding model.', default=DEFAULT_EMBEDDING_MODEL)
+    parser.add_argument("-ep", "--embedding_model", type=str, help='The embedding model used to create the vector store.', default=DEFAULT_EMBEDDING_MODEL)
     args = parser.parse_args()
 
     bot = RAGBot(
         model_path = args.model_path,
         vector_path = args.vector_state_path,
-        embedding_model_path = args.embedding_model_path    
+        embedding_model = args.embedding_model    
     )
 
     bot.rag_execute()
