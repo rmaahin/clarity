@@ -42,7 +42,7 @@ class Indexing:
         self.chunks = []
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def __clear_embedding(self):
+    def _clear_embedding(self):
         """
         Clears the existing vector store if it exists already and creates a new one.
         """
@@ -52,7 +52,7 @@ class Indexing:
         else:
             print(f"No old vector store found at {self.vector_path}. Creating a new one!")
 
-    def __document_loader(self):
+    def _document_loader(self):
         """
         Loads documents into memory to be fed into the splitter/chunkify function. 
         Currently handles only .rst documents.
@@ -77,7 +77,7 @@ class Indexing:
                 f"This loader currently only supports: {supported_types}"
             )
 
-    def __text_splitter(self):
+    def _text_splitter(self):
         """
         Splits the documents into chunks based on the chunk and overlap size.
         """
@@ -94,7 +94,7 @@ class Indexing:
         self.chunks = text_splitter.split_documents(self.documents)
         print(f"Split all the documents into {len(self.chunks)} chunks")
 
-    def __embed_and_store(self):
+    def _embed_and_store(self):
         """
         Uses an embedding model to convert each text chunk into vectors that represent its semantic meaning. 
         By defualt, "sentence-transformers/all-MiniLM-L6-v2" is used as the embedding model, but you can choose another embedding model of your choice.
@@ -121,10 +121,10 @@ class Indexing:
             print("Checking for pandoc dependency...")
             download_pandoc()   
             print("Starting the indexing pipeline...")
-            self.__clear_embedding()
-            self.__document_loader()
-            self.__text_splitter()
-            self.__embed_and_store() 
+            self._clear_embedding()
+            self._document_loader()
+            self._text_splitter()
+            self._embed_and_store() 
             print(f"Indexing completed. Embeddings successfully stored at: {self.vector_path}!")
 
         except Exception as e:
